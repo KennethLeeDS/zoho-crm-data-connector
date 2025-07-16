@@ -2,10 +2,10 @@
   "name": "zoho-crm-connection",
   "version": "1.0.0",
   "description": "Zoho CRM OAuth connection and contact retrieval",
-  "main": "src/test-connection.js",
+  "main": "src/test/test-connection.js",
   "scripts": {
-    "test": "node src/test-connection.js",
-    "start": "node src/test-connection.js"
+    "test": "node src/test/test-connection.js",
+    "start": "node src/test/test-connection.js"
   },
   "dependencies": {
     "axios": "^1.6.0",

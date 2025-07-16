@@ -1,4 +1,4 @@
-const TokenManager = require('./auth/token-manager');
+const TokenManager = require('../auth/token-manager');
 
 async function testTokenManager() {
   console.log('🔄 Testing Token Manager with Refresh Token...\n');

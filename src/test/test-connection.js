@@ -1,4 +1,4 @@
-const ZohoOAuthClient = require('./auth/oauth-client');
+const ZohoOAuthClient = require('../auth/oauth-client');
 const readline = require('readline');
 
 async function testZohoConnection() {

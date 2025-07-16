@@ -1,4 +1,4 @@
-const ContactSearch = require('./connectors/contact-search');
+const ContactSearch = require('../connectors/contact-search');
 const readline = require('readline');
 
 async function testContactSearch() {

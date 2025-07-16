@@ -1,7 +1,7 @@
-const ContactSearch = require('./connectors/contact-search');
-const DataMapper = require('./connectors/data-mapper');
-const DataswiftWalletClient = require('./storage/dataswift-wallet-client');
-const JWTTokenGenerator = require('./auth/jwt-token-generator');
+const ContactSearch = require('../connectors/contact-search');
+const DataMapper = require('../connectors/data-mapper');
+const DataswiftWalletClient = require('../storage/dataswift-wallet-client');
+const JWTTokenGenerator = require('../auth/jwt-token-generator');
 
 async function testCompleteFlow() {
   console.log('🔄 Testing Complete Flow: Zoho CRM → Dataswift Wallet...\n');
