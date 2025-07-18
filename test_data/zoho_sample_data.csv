@@ -1,0 +1,4 @@
+Email,First_Name,Last_Name,Company,Phone,Title,Country,City,Street,Address_Line_2,Zip_Code,Registration_Number,Tax_File_Number,Sales_Service_Tax_Number,KYB_Verified,KYB_Verified_At
+sarah.johnson@techcorp.com,Sarah,Johnson,TechCorp Solutions,+1-555-0123,Senior Marketing Manager,United States,San Francisco,123 Innovation Drive,Suite 400,94105,REG-TC-2024-001,TFN-987654321,SST-TC-456789,TRUE,2024-01-15T10:30:00Z
+michael.chen@globalfinance.com,Michael,Chen,Global Finance Ltd,+44-20-7123-4567,Financial Director,United Kingdom,London,45 Canary Wharf,Floor 12,E14 5AB,REG-GF-2024-002,TFN-123456789,SST-GF-789123,TRUE,2024-02-20T14:45:00Z
+emma.rodriguez@innovatestart.com,Emma,Rodriguez,InnovateStart Inc,+61-2-9876-5432,Chief Technology Officer,Australia,Sydney,88 George Street,Level 25,2000,REG-IS-2024-003,TFN-456789123,SST-IS-321654,FALSE,,

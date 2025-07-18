@@ -46,7 +46,31 @@ DATASWIFT_PASSWORD=your_password
 CALLBACK_URL=https://example.com/callback
 ```
 
-### 3. Zoho CRM Authentication Setup
+### 3. Test Data Setup
+
+For testing purposes, sample contact data is provided in the `test_data/` directory:
+
+```
+test_data/
+└── zoho_sample_data.csv    # Sample contact data for testing
+```
+
+**To set up test data:**
+
+1. Import the sample data into your Zoho CRM Contacts module:
+   - Go to your Zoho CRM → Contacts module
+   - Click "Import" → "From File"
+   - Upload `test_data/zoho_sample_data.csv`
+   - Map the CSV columns to the corresponding Zoho CRM fields
+
+2. The test data includes three sample contacts:
+   - `sarah.johnson@techcorp.com` - TechCorp Solutions (US)
+   - `michael.chen@globalfinance.com` - Global Finance Ltd (UK)
+   - `emma.rodriguez@innovatestart.com` - InnovateStart Inc (Australia)
+
+3. After importing, you can test the connector with these email addresses
+
+### 4. Zoho CRM Authentication Setup
 
 #### Step 1: Create Self-Client Application
 
