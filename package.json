@@ -2,17 +2,27 @@
   "name": "zoho-crm-connection",
   "version": "1.0.0",
   "description": "Zoho CRM OAuth connection and contact retrieval",
-  "main": "src/test/test-connection.js",
+  "main": "src/server.js",
   "scripts": {
-    "test": "node src/test/test-connection.js",
-    "start": "node src/test/test-connection.js"
+    "test": "node src/test/run-connect-test.js",
+    "test:auth": "node src/test/test-connection.js",
+    "test:connect": "node src/test/run-connect-test.js",
+    "test:endpoint": "node src/test/test-connect-endpoint.js",
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
   },
   "dependencies": {
     "axios": "^1.6.0",
-    "dotenv": "^16.0.0"
+    "dotenv": "^16.0.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2"
   },
-  "devDependencies": {},
-  "keywords": ["zoho", "crm", "oauth", "contacts"],
+  "keywords": [
+    "zoho",
+    "crm",
+    "oauth",
+    "contacts"
+  ],
   "author": "",
   "license": "ISC"
 }
