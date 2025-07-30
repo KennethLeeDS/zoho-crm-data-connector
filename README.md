@@ -1,15 +1,16 @@
 # Zoho CRM Data Connector
 
-A webhook-driven data connector service that extracts merchant data from Zoho CRM Contacts module and stores it in Dataswyft Wallets in the zoho-crm namespace with comprehensive error handling and retry mechanisms.
+A production-ready webhook-driven data connector service that receives requests from the CheckD Data Connector Gateway, authenticates with Zoho CRM using OAuth 2.0, extracts merchant contact data, and stores it in Dataswyft Wallets with comprehensive error handling and user-friendly error pages.
 
 ## Features
 
-- 🔐 **OAuth 2.0 Authentication** - Self-client authorization with automatic token refresh
-- 📊 **Limited Field Extraction** - Only pulls required fields to optimize API performance
-- 🔄 **Intelligent Retry Logic** - Exponential backoff with error-specific retry strategies
-- 💾 **Zoho CRM Namespace Storage** - Stores data in zoho-crm namespace with test/production separation
+- 🚀 **Production API Endpoint** - `/connect` endpoint for Data Connector Gateway integration
+- 🔐 **JWT Token Authentication** - Validates and processes JWT tokens from the gateway
+- 📧 **Email-Based Contact Search** - Searches Zoho CRM contacts by merchant email
+- 💾 **Smart Namespace Storage** - Test/production separation with automatic detection
+- 📄 **User-Friendly Error Pages** - Professional error pages for different failure scenarios
 - 📞 **Callback Integration** - Returns status and record IDs via callback URLs
-- 🛡️ **Comprehensive Error Handling** - Structured error codes with user action guidance
+- 🧪 **Comprehensive Testing** - Full end-to-end test suite with error page validation
 
 ## Quick Start
 
@@ -21,18 +22,18 @@ cd zoho-crm-data-connector
 npm install
 ```
 
-### 2. Configuration
+### 2. Environment Configuration
 
-Copy the environment template:
+Create your environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your credentials:
+Configure your credentials in `.env`:
 
 ```bash
-# Zoho CRM OAuth Configuration
+# Zoho CRM OAuth Configuration (Self-Client)
 ZOHO_CRM_CLIENT_ID=your_client_id_here
 ZOHO_CRM_CLIENT_SECRET=your_client_secret_here
 ZOHO_CRM_REFRESH_TOKEN=your_refresh_token_here
@@ -42,314 +43,287 @@ DATASWIFT_API_URL=https://your-wallet-instance.hubat.net
 DATASWIFT_USERNAME=your_username
 DATASWIFT_PASSWORD=your_password
 
-# Callback Configuration
-CALLBACK_URL=https://example.com/callback
+# Optional Configuration
+DS_APPLICATION_ID=zoho-crm-connector
+CONNECTOR_PORT=8080
+NODE_ENV=test
 ```
 
-### 3. Test Data Setup
+### 3. Zoho CRM Authentication Setup
 
-For testing purposes, sample contact data is provided in the `test_data/` directory:
-
-```
-test_data/
-└── zoho_sample_data.csv    # Sample contact data for testing
-```
-
-**To set up test data:**
-
-1. Import the sample data into your Zoho CRM Contacts module:
-   - Go to your Zoho CRM → Contacts module
-   - Click "Import" → "From File"
-   - Upload `test_data/zoho_sample_data.csv`
-   - Map the CSV columns to the corresponding Zoho CRM fields
-
-2. The test data includes three sample contacts:
-   - `sarah.johnson@techcorp.com` - TechCorp Solutions (US)
-   - `michael.chen@globalfinance.com` - Global Finance Ltd (UK)
-   - `emma.rodriguez@innovatestart.com` - InnovateStart Inc (Australia)
-
-3. After importing, you can test the connector with these email addresses
-
-### 4. Zoho CRM Authentication Setup
-
-#### Step 1: Create Self-Client Application
+#### Create Self-Client Application
 
 1. Go to [Zoho API Console](https://api-console.zoho.com/)
-2. Create a new application
-3. Select **"Self Client"** application type
-4. Configure scopes: `ZohoCRM.modules.contacts.ALL`
-5. Note your `Client ID` and `Client Secret`
+2. Create a new application → Select **"Self Client"**
+3. Configure scopes: `ZohoCRM.modules.contacts.ALL`
+4. Note your `Client ID` and `Client Secret`
 
-#### Step 2: Generate Authorization Code
+#### Generate Refresh Token
 
-1. In Zoho API Console, navigate to "Generate Code" tab
+1. In API Console → "Generate Code" tab
 2. Select scopes: `ZohoCRM.modules.contacts.ALL`
-3. Set code expiry time (default: 3 minutes)
-4. Click "CREATE" to generate authorization code
-5. **Copy the code immediately** (expires in 3 minutes)
-
-#### Step 3: Test Authentication
-
-Run the authentication test:
+3. Generate authorization code (**expires in 3 minutes**)
+4. Add your Client ID and Client Secret to `.env` file first
+5. Run the test suite to exchange authorization code for refresh token:
 
 ```bash
 npm test
 ```
 
-Enter your authorization code when prompted. The test will:
-- Exchange authorization code for access token
-- Test token validation
-- Test refresh token functionality
-- Display token information
+When prompted, enter your authorization code. The test will validate your setup and display the refresh token to copy to your `.env` file.
 
-**Save the refresh token** from the output to your `.env` file.
+### 4. Test Data Setup
+
+Import sample contacts to your Zoho CRM:
+
+1. **Sample contacts included:**
+   - `sarah.johnson@techcorp.com` - TechCorp Solutions (US)
+   - `michael.chen@globalfinance.com` - Global Finance Ltd (UK)  
+   - `emma.rodriguez@innovatestart.com` - InnovateStart Inc (Australia)
+
+2. **Import to Zoho CRM:**
+   - Upload `test_data/zoho_sample_data.csv` to your Contacts module
+   - Map CSV columns to Zoho CRM fields
 
 ## Usage
 
-### Basic Contact Import
+### Start the Server
 
 ```bash
-# Import a specific contact
-node src/test/import-contact-to-wallet.js michael.chen@globalfinance.com
+# Production mode
+npm start
 
-# Run full test suite
-node src/test/import-contact-to-wallet.js
+# Development mode  
+npm run dev
 ```
 
-### Production Integration
+Server runs on `http://localhost:8080` (or `CONNECTOR_PORT`)
 
-```javascript
-const { importContactToWallet } = require('./src/test/import-contact-to-wallet');
+### Main API Endpoint
 
-// Import contact with full error handling
-const result = await importContactToWallet('user@example.com');
+#### `GET /connect` - Data Connector Gateway Endpoint
 
-if (result.success) {
-  console.log('Success!', result.recordId);
-  console.log('Callback URL:', result.callbackUrl);
-} else {
-  console.log('Error:', result.code, result.message);
-  console.log('User Action:', result.userAction);
-  console.log('Retryable:', result.retryable);
-}
+**Query Parameters:**
+- `token` (required) - JWT token containing PDA URL and application ID
+- `callback_url` (required) - URL to redirect after completion  
+- `data` (required) - JSON object containing merchant email
+- `request_id` (required) - Request identifier for tracking
+
+**Example Request:**
 ```
+GET /connect?token=eyJhbGc...&callback_url=https://checkd.io/api/callback&data={"email":"merchant@example.com"}&request_id=req_123456
+```
+
+**Response Flow:**
+1. **Immediate Response** - 200 OK with processing status
+2. **Async Processing** - Validates JWT, searches Zoho CRM, stores data
+3. **Callback Response** - Success/failure status with record IDs or error page URL
+
+### Error Pages
+
+The connector provides user-friendly error pages for different scenarios:
+
+- **🔍 Contact Not Found (404)** - `/error?type=EMAIL_NOT_FOUND`
+- **🔐 Authentication Failed (401)** - `/error?type=INVALID_TOKEN`
+- **🔗 Zoho CRM Error (401)** - `/error?type=OAUTH_FAILURE`
+- **⚠️ Service Error (500)** - `/error?type=API_ERROR`
+- **📋 Invalid Request (400)** - `/error?type=INVALID_DATA`
+
+## Testing
+
+### Run Test Suite
+
+```bash
+npm test
+```
+
+The test suite validates the complete `/connect` endpoint workflow including success scenarios, error handling, JWT token validation, and error page functionality.
+
+## Data Flow
+
+### Success Flow
+1. **Gateway Request** → `/connect` endpoint with JWT token
+2. **JWT Validation** → Extract PDA URL and validate expiration
+3. **Contact Search** → Find merchant in Zoho CRM by email
+4. **Data Transform** → Convert to Dataswyft wallet format
+5. **Storage** → Save to appropriate namespace (test/production)
+6. **Callback** → Send success status with record ID
+
+### Error Flow  
+1. **Error Detection** → Invalid token, missing email, API failure
+2. **Error Page Generation** → Create user-friendly error page
+3. **Callback** → Send failure status with error page URL for user redirection
 
 ## Data Structure
 
-### Input Fields (from Zoho CRM)
-
-The connector extracts these specific fields to optimize API performance:
-
-```javascript
-const fields = [
-  'Email', 'First_Name', 'Last_Name', 'company', 'Phone', 'Title',
-  'Mailing_Country', 'Mailing_City', 'Mailing_Street', 'address2', 'Mailing_Zip',
-  'registration_number', 'tax_file_number', 'sales_service_tax_number',
-  'kyb_verified', 'kyb_verified_at', 'id', 'Created_Time', 'Modified_Time'
-];
-```
-
-### Output Structure (to Dataswyft Wallet)
-
+### Input (from Gateway)
 ```javascript
 {
-  "namespace": "zoho-crm",
+  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", // JWT with PDA URL
+  callback_url: "https://checkd.io/api/callback",
+  data: "{\"email\":\"merchant@example.com\"}",       // Merchant email
+  request_id: "req_123456"
+}
+```
+
+### Output (to Dataswyft Wallet)
+```javascript
+{
+  "namespace": "zoho_crm", // or "test" for testing
   "endpoint": "/crm/v8/Contacts/search",
   "data": {
     "id": "6899019000000603062",
     "created_at": "2025-07-16T12:34:51-04:00",
-    "updated_at": "2025-07-16T12:34:51-04:00",
     "source": {
       "provider": "zoho_crm",
       "version": "v8",
-      "endpoint": "/crm/v8/Contacts/search",
       "module": "Contacts"
     },
     "content": {
-      "email": "michael.chen@globalfinance.com",
-      "firstname": "Michael",
-      "lastname": "Chen",
-      "company": "Global Finance Ltd",
-      "phone": "+44-20-7123-4567",
-      "jobtitle": "Financial Director",
-      "country": "United Kingdom",
-      "city": "London",
-      "address": "45 Canary Wharf",
-      "address2": null,
-      "zip": "E14 5AB",
-      "registration_number": "REG-GF-2024-002",
-      "tax_file_number": "TFN-123456789",
-      "sales_service_tax_number": "SST-GF-789123",
-      "kyb_verified": true,
-      "kyb_verified_at": "2024-02-20T14:45:00Z",
-      "zoho_object_id": "6899019000000603062",
-      "properties": {}
+      "email": "merchant@example.com",
+      "firstname": "John",
+      "lastname": "Doe",
+      "company": "Example Corp",
+      "phone": "+1-555-0123",
+      "jobtitle": "CEO",
+      "country": "United States",
+      // ... additional fields
     },
     "metadata": {
-      "sync_timestamp": "2025-07-16T17:37:05.190Z",
+      "sync_timestamp": "2025-07-30T22:15:30.123Z",
       "connector_version": "1.0.0",
-      "schema_version": "1.0",
-      "import_trigger": "badge_authentication"
+      "schema_version": "1.0"
     }
   }
 }
-```
-
-## Error Handling
-
-### Error Codes & Status Codes
-
-| Error | Code | Message | User Action |
-|-------|------|---------|-------------|
-| Email Not Found | 404 | "Merchant email not found in Zoho CRM" | Contact support |
-| OAuth Failure | 401 | "Unable to authenticate with Zoho CRM" | Check configuration |
-| Zoho CRM API Error | 503 | "Zoho CRM service temporarily unavailable" | Retry later |
-| Invalid Email | 400 | "Invalid email format provided" | Check email |
-| Rate Limited | 429 | "Too many requests, please wait" | Wait 10 minutes |
-| No Module Access | 403 | "Cannot access Contacts module" | Config error |
-| Token Expired | 401 | "OAuth token expired" | Refresh token |
-
-### Retry Strategy
-
-- **Email Not Found**: No retry (legitimate business case)
-- **OAuth Failures**: Retry token refresh once
-- **API Errors (5xx)**: Exponential backoff, max 3 attempts
-- **Rate Limits**: Wait for rate limit window reset (10 minutes)
-- **Network Errors**: Immediate retry, then exponential backoff
-
-### Callback URLs
-
-#### Success Response
-```
-https://example.com/callback?recordId=c2e120d3-aac2-4044-b2b0-6b8b8f62cfce&status=success&code=200
-```
-
-#### Error Response
-```
-https://example.com/callback?status=failure&code=404&message=Merchant%20email%20not%20found%20in%20Zoho%20CRM&userAction=Contact%20support
 ```
 
 ## Project Structure
 
 ```
 src/
+├── server.js                     # Main Express server with /connect endpoint
 ├── auth/
-│   ├── oauth-client.js          # OAuth 2.0 client with token management
-│   ├── token-manager.js         # Token caching and refresh logic
-│   └── jwt-token-generator.js   # JWT token utilities
+│   ├── oauth-client.js           # Zoho CRM OAuth 2.0 client
+│   ├── token-manager.js          # Token caching and refresh
+│   └── jwt-token-generator.js    # JWT utilities
 ├── connectors/
-│   ├── zoho-crm-connector.js    # Main CRM connector with limited fields
-│   ├── contact-search.js        # Email-based contact search
-│   └── data-mapper.js           # Schema transformation
+│   ├── zoho-crm-connector.js     # CRM API client with field optimization
+│   ├── contact-search.js         # Email-based contact search
+│   └── data-mapper.js            # Data transformation
 ├── storage/
-│   └── dataswyft-wallet-client.js  # Dataswyft Wallet API client
-├── test/
-│   ├── import-contact-to-wallet.js  # Complete import test with retry logic
-│   ├── test-connection.js           # OAuth authentication test
-│   ├── pull-contact-data.js         # Contact data extraction test
-│   └── test-production-connector.js # Production connector test
-└── config/
-    └── environment.js           # Environment configuration
+│   └── dataswyft-wallet-client.js # Dataswyft Wallet API client
+└── test/
+    ├── test-connect-endpoint.js   # Main endpoint test suite
+    ├── run-connect-test.js        # Test runner with server management
+    ├── test-connection.js         # OAuth authentication test
+    └── import-contact-to-wallet.js # Individual contact import test
 ```
 
-## Testing
+## Health Checks
 
-### Run Authentication Test
+### Server Health
 ```bash
-npm test
+curl http://localhost:8080/health
 ```
 
-### Test Contact Import
-```bash
-# Test with known contact
-node src/test/import-contact-to-wallet.js michael.chen@globalfinance.com
-
-# Test error handling
-node src/test/import-contact-to-wallet.js nonexistent@example.com
+**Response:**
+```json
+{
+  "status": "healthy",
+  "version": "1.0.0", 
+  "timestamp": "2025-07-30T22:15:30.123Z"
+}
 ```
 
-### Test Data Extraction
-```bash
-# Pull raw contact data
-node src/test/pull-contact-data.js michael.chen@globalfinance.com
-
-# Test production connector
-node src/test/test-production-connector.js
-```
-
-## Development
+## Production Deployment
 
 ### Environment Variables
+- Set `NODE_ENV=production` for production namespace usage
+- Ensure `ZOHO_CRM_REFRESH_TOKEN` is valid and secure
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `ZOHO_CRM_CLIENT_ID` | Zoho CRM OAuth Client ID | Yes |
-| `ZOHO_CRM_CLIENT_SECRET` | Zoho CRM OAuth Client Secret | Yes |
-| `ZOHO_CRM_REFRESH_TOKEN` | OAuth refresh token | Yes |
-| `DATASWIFT_API_URL` | Dataswyft wallet API URL | Yes |
-| `DATASWIFT_USERNAME` | Dataswyft wallet username | Yes |
-| `DATASWIFT_PASSWORD` | Dataswyft wallet password | Yes |
-| `CALLBACK_URL` | Callback URL for status updates | Yes |
+### Docker Deployment
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY src/ ./src/
+EXPOSE 8080
+CMD ["npm", "start"]
+```
 
-### Storage Namespaces
 
-The connector writes data to the Dataswyft wallet using these namespace patterns:
+## Error Handling
 
-- **Production**: `zoho-crm/contacts`
-- **Testing**: `test/zoho-crm`
+### Error Codes
+- `EMAIL_NOT_FOUND` (404) - Contact not found in Zoho CRM
+- `INVALID_TOKEN` (401) - JWT token invalid or expired
+- `OAUTH_FAILURE` (401) - Zoho CRM authentication failed
+- `API_ERROR` (500) - General service error
+- `INVALID_DATA` (400) - Invalid request parameters
 
-All data is stored in the `zoho-crm` namespace structure, with test data separated using the `test/` prefix.
+### Retry Strategy
+- **Non-retryable**: Email not found, invalid tokens
+- **Retryable**: OAuth failures, API errors, network issues
+- **Automatic**: Exponential backoff for transient failures
 
-### Performance Targets
+## Performance
 
+### Targets
 - OAuth token acquisition: < 1 second
-- Contact search: < 1 second
+- Contact search: < 1 second  
 - Data transformation: < 100ms
 - Wallet storage: < 2 seconds
-- Total import time: < 5 seconds
+- **Total processing time: < 5 seconds**
+
+### Optimization
+- Limited field extraction from Zoho CRM
+- In-memory token caching
+- Namespace separation for test/production
+- Connection pooling for external APIs
 
 ## Security
 
-- OAuth refresh tokens stored as environment variables
-- Access tokens never persisted to disk
-- Token cache cleared on application restart
-- Client credentials kept secure
-- All API communications over HTTPS
+- ✅ **JWT token validation** with expiration checking
+- ✅ **OAuth refresh tokens** stored securely as environment variables
+- ✅ **Access tokens** never persisted to disk
+- ✅ **HTTPS-only** communication with external APIs
+- ✅ **Input validation** for all request parameters
+- ✅ **Error page sanitization** to prevent XSS
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **"Authorization code expired"**
-   - Authorization codes expire in 3 minutes
-   - Generate a new code and retry immediately
+**"Token has expired"**
+- Regenerate authorization code in Zoho API Console
+- Run `npm test` to get new refresh token
 
-2. **"Unable to authenticate with Zoho CRM"**
-   - Check your client ID and secret
-   - Verify refresh token is valid
-   - Ensure correct scopes are configured
+**"Contact not found"**  
+- Verify email exists in Zoho CRM Contacts
+- Check test data import was successful
+- Ensure contact has required fields populated
 
-3. **"No contact found"**
-   - Verify email exists in Zoho CRM
-   - Check email format
-   - Ensure contact has required fields
-
-4. **"Rate limit exceeded"**
-   - Wait 10 minutes before retrying
-   - System automatically handles rate limiting
+**"Tests failing"**
+- Verify all environment variables are set
+- Check Zoho CRM refresh token is valid
+- Ensure Dataswyft wallet credentials are correct
 
 ### Debug Mode
-
 Enable detailed logging:
-
 ```bash
-LOG_LEVEL=debug node src/test/import-contact-to-wallet.js
+LOG_LEVEL=debug npm start
 ```
+
+## Contributing
+
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature/new-feature`
+3. Make changes and add tests
+4. Run test suite: `npm test`
+5. Submit pull request
 
 ## License
 
 [Your License Here]
-
-## Contributing
-
-[Your Contributing Guidelines Here]
